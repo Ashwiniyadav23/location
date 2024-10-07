@@ -3,11 +3,10 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiZ2F1cmF2bmciLCJhIjoiY20xdGx3ODhuMDNzNTJ0cHI2Y
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/streets-v11',
-  center: [83.8908, 22.8898], // Center near Jashpur, India
-  zoom: 14 // Zoom in closer to cover nearby locations
+  center: [83.8908, 22.8898], 
+  zoom: 14 
 });
 
-// Search for Location
 function searchLocation() {
   const location = document.getElementById('location').value;
   
@@ -25,23 +24,33 @@ function searchLocation() {
     .catch(error => console.error('Error:', error));
 }
 
-// Filter Places (Bank, School, etc.)
 function filterPlaces() {
-  const placeType = document.getElementById('place-type').value;
-  const bounds = map.getBounds();
+    const placeType = document.getElementById('place-type').value;
+    const bounds = map.getBounds();
+    const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
 
-  fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${placeType}.json?bbox=${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}&proximity=83.8908,22.8898&access_token=${mapboxgl.accessToken}`)
-    .then(response => response.json())
-    .then(data => {
-      data.features.forEach(place => {
-        const coordinates = place.geometry.coordinates;
-        new mapboxgl.Marker({ color: 'blue' })
-          .setLngLat(coordinates)
-          .addTo(map);
-      });
-    })
-    .catch(error => console.error('Error:', error));
-}
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${placeType}.json?bbox=${bbox}&types=poi&access_token=${mapboxgl.accessToken}`)
+      .then(response => response.json())
+      .then(data => {
+        // Clear existing markers
+        const markers = document.querySelectorAll('.mapboxgl-marker');
+        markers.forEach(marker => marker.remove());
+
+        // Add markers for the filtered places
+        data.features.forEach(place => {
+          const coordinates = place.geometry.coordinates;
+          new mapboxgl.Marker({ color: 'blue' })
+            .setLngLat(coordinates)
+            .addTo(map);
+        });
+
+        if (data.features.length === 0) {
+          alert("No places found for the selected type.");
+        }
+      })
+      .catch(error => console.error('Error:', error));
+  }
+
 
 // Calculate Distance and Duration for Different Transport Modes
 function calculateDistance() {
@@ -107,7 +116,6 @@ function calculateDistance() {
       })
       .catch(error => console.error('Error fetching location A:', error));
   }
-
 
 
 
